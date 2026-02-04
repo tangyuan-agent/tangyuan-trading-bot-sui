@@ -1,14 +1,20 @@
 import { SuiClient, SuiHTTPTransport } from '@mysten/sui/client';
 import { SuiNetwork } from '../types/index.js';
+import { RateLimiter } from '../utils/rate-limiter.js';
 import logger from '../utils/logger.js';
 
 export class SuiClientManager {
   private client: SuiClient;
   private currentRpcIndex = 0;
   private rpcUrls: string[];
+  private rateLimiter?: RateLimiter;
   
-  constructor(network: SuiNetwork, rpcUrls: string[]) {
+  constructor(network: SuiNetwork, rpcUrls: string[], rateLimit?: number) {
     this.rpcUrls = rpcUrls;
+    
+    if (rateLimit) {
+      this.rateLimiter = new RateLimiter(rateLimit);
+    }
     
     if (rpcUrls.length === 0) {
       throw new Error('At least one RPC URL is required');
@@ -62,7 +68,12 @@ export class SuiClientManager {
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        return await operation(this.client);
+        // Apply rate limiting if configured
+        if (this.rateLimiter) {
+          return await this.rateLimiter.executeWithLimit(() => operation(this.client));
+        } else {
+          return await operation(this.client);
+        }
       } catch (error) {
         lastError = error as Error;
         logger.warn(
@@ -79,8 +90,16 @@ export class SuiClientManager {
     
     throw lastError;
   }
+  
+  getRateLimiterStatus() {
+    return this.rateLimiter?.getStatus();
+  }
 }
 
-export function createSuiClient(network: SuiNetwork, rpcUrls: string[]): SuiClientManager {
-  return new SuiClientManager(network, rpcUrls);
+export function createSuiClient(
+  network: SuiNetwork,
+  rpcUrls: string[],
+  rateLimit?: number
+): SuiClientManager {
+  return new SuiClientManager(network, rpcUrls, rateLimit);
 }
