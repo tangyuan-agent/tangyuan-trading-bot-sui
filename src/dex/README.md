@@ -15,38 +15,36 @@ dex/
     └── turbos.ts         # Turbos DEX adapter
 ```
 
-## TODO: Update Contract Addresses
+## ✅ Contract Addresses (Updated)
 
-Before running on mainnet, update the following addresses in adapter files:
+Mainnet contract addresses have been configured from official sources:
 
 ### Cetus (`adapters/cetus.ts`)
 
 ```typescript
 const CETUS_CONFIG = {
-  globalConfigId: '0x...',  // ⚠️ UPDATE THIS
-  packageId: '0x...',       // ⚠️ UPDATE THIS
-  poolCreatedType: '0x...', // ⚠️ UPDATE THIS
+  globalConfigId: '0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f',
+  packageId: '0x1eabed72c53feb3805120a081dc15963c204dc8d091542592abaf7a35689b2fb',
+  publishedAt: '0xc6faf3703b0e8ba9ed06b7851134bbbe7565eb35ff823fd78432baa4cbeaa12e',
+  poolsId: '0xf699e7f2276f5c9a75944b37a0c5b5d9ddfd2471bf6242483b03ab2887d198d0',
 };
 ```
 
-**How to find:**
-1. Visit Cetus docs: https://cetus-1.gitbook.io/cetus-docs
-2. Or check Sui Explorer for Cetus contracts
-3. Or use Sui CLI: `sui client objects --address <cetus-address>`
+**Source**: https://github.com/CetusProtocol/cetus-clmm-sui-sdk/blob/main/src/config/mainnet.ts
 
 ### Turbos (`adapters/turbos.ts`)
 
 ```typescript
 const TURBOS_CONFIG = {
-  poolRegistryId: '0x...',  // ⚠️ UPDATE THIS
-  packageId: '0x...',       // ⚠️ UPDATE THIS
-  poolCreatedType: '0x...', // ⚠️ UPDATE THIS
+  packageId: '0xa5a0c25c79e428eba04fb98b3fb2a34db45ab26d4c8faf0d7e39d66a63891e64',
+  poolConfig: '0xc294552b2765353bcafa7c359cd28fd6bc237662e5db8f09877558d81669170c',
+  poolTableId: '0x08984ed8705f44b6403705dc248896e56ab7961447820ae29be935ce0d32198b',
+  positions: '0xf5762ae5ae19a2016bb233c72d9a4b2cba5a302237a82724af66292ae43ae52d',
+  versioned: '0xf1cf0e81048df168ebeb1b8030fad24b3e0b53ae827c25053fff0779c1445b6f',
 };
 ```
 
-**How to find:**
-1. Visit Turbos docs
-2. Or check their deployed contracts on Sui mainnet
+**Source**: https://s3.amazonaws.com/app.turbos.finance/sdk/contract.json
 
 ## Pool Discovery Strategy
 
