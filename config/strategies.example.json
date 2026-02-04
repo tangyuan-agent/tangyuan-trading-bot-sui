@@ -1,0 +1,46 @@
+{
+  "dca": {
+    "enabled": true,
+    "schedule": "0 12 * * *",
+    "pairs": [
+      {
+        "tokenIn": "SUI",
+        "tokenOut": "USDC",
+        "amountUSD": 100,
+        "dex": "auto"
+      }
+    ],
+    "slippage": 0.005
+  },
+  "trend": {
+    "enabled": false,
+    "pairs": ["SUI/USDC"],
+    "indicators": {
+      "sma_short": 20,
+      "sma_long": 50
+    },
+    "positionSize": 0.1,
+    "stopLoss": 0.05,
+    "takeProfit": 0.15,
+    "slippage": 0.03
+  },
+  "risk": {
+    "maxTradeUSD": 1000,
+    "maxDailyTrades": 50,
+    "maxDailyLossUSD": 500,
+    "circuitBreaker": {
+      "consecutiveFailures": 5,
+      "cooldownMinutes": 60
+    }
+  },
+  "dexes": {
+    "cetus": {
+      "enabled": true,
+      "priority": 1
+    },
+    "turbos": {
+      "enabled": true,
+      "priority": 2
+    }
+  }
+}

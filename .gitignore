@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables
+.env
+.env.local
+
+# Wallet files (NEVER commit)
+*.wallet
+*.keystore
+wallet.json
+
+# Database
+*.db
+*.db-*
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+
+# Backup exports (contains sensitive data)
+backups/
+exports/
