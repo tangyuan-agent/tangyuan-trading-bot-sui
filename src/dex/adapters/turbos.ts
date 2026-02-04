@@ -4,10 +4,14 @@ import logger from '../../utils/logger.js';
 
 // Turbos mainnet addresses (from official S3 config)
 // Source: https://s3.amazonaws.com/app.turbos.finance/sdk/contract.json
+// Note: Events are emitted from the ORIGINAL package, not the current one!
+const TURBOS_PACKAGE_ORIGINAL = '0x91bfbc386a41afcfd9b2533058d7e915a1d3829089cc268ff4333d54d6339ca1';
 const TURBOS_PACKAGE_ID = '0xa5a0c25c79e428eba04fb98b3fb2a34db45ab26d4c8faf0d7e39d66a63891e64';
 
 const TURBOS_CONFIG = {
-  // Package ID
+  // Original package ID (for events)
+  packageIdOriginal: TURBOS_PACKAGE_ORIGINAL,
+  // Current package ID
   packageId: TURBOS_PACKAGE_ID,
   // Pool config object
   poolConfig: '0xc294552b2765353bcafa7c359cd28fd6bc237662e5db8f09877558d81669170c',
@@ -17,8 +21,8 @@ const TURBOS_CONFIG = {
   positions: '0xf5762ae5ae19a2016bb233c72d9a4b2cba5a302237a82724af66292ae43ae52d',
   // Versioned object
   versioned: '0xf1cf0e81048df168ebeb1b8030fad24b3e0b53ae827c25053fff0779c1445b6f',
-  // Pool creation event type
-  poolCreatedType: `${TURBOS_PACKAGE_ID}::pool::CreatePoolEvent`,
+  // Pool creation event type (in pool_factory module of ORIGINAL package)
+  poolCreatedType: `${TURBOS_PACKAGE_ORIGINAL}::pool_factory::PoolCreatedEvent`,
 };
 
 export class TurbosAdapter implements DEXAdapter {
