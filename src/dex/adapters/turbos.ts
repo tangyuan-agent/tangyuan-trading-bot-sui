@@ -38,26 +38,43 @@ export class TurbosAdapter implements DEXAdapter {
     try {
       logger.info('Fetching Turbos pools...');
       
-      // Strategy: Query all PoolCreated events
-      const events = await this.client.queryEvents({
-        query: { MoveEventType: TURBOS_CONFIG.poolCreatedType },
-        limit: 1000,
-        order: 'descending',
-      });
+      // Strategy: Query all PoolCreated events with pagination
+      const allPoolIds: string[] = [];
+      let cursor: any = null;
+      const maxPages = 10; // Fetch up to 10 pages (500 pools)
       
-      logger.info({ eventCount: events.data.length }, 'Turbos events fetched');
+      for (let page = 0; page < maxPages; page++) {
+        const events = await this.client.queryEvents({
+          query: { MoveEventType: TURBOS_CONFIG.poolCreatedType },
+          limit: 50,
+          order: 'descending',
+          cursor,
+        });
+        
+        // Extract pool IDs from this page
+        const poolIds = events.data
+          .map(event => (event.parsedJson as any)?.pool as string)
+          .filter((id): id is string => !!id);
+        
+        allPoolIds.push(...poolIds);
+        
+        if (!events.hasNextPage || !events.nextCursor) {
+          break;
+        }
+        
+        cursor = events.nextCursor;
+      }
       
-      // Extract pool IDs from events
-      const poolIds = events.data
-        .map(event => (event.parsedJson as any)?.pool as string)
-        .filter((id): id is string => !!id);
+      logger.info({ poolCount: allPoolIds.length }, 'Turbos pool IDs collected');
       
-      if (poolIds.length === 0) {
+      if (allPoolIds.length === 0) {
         logger.warn('No pool IDs found in events');
         return [];
       }
       
-      logger.info({ poolCount: poolIds.length }, 'Fetching pool objects...');
+      logger.info({ poolCount: allPoolIds.length }, 'Fetching pool objects...');
+      
+      const poolIds = allPoolIds;
       
       // Batch fetch pool objects (50 at a time to respect rate limits)
       const pools: PoolInfo[] = [];

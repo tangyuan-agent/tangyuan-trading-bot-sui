@@ -32,31 +32,42 @@ export class CetusAdapter implements DEXAdapter {
     try {
       logger.info('Fetching Cetus pools...');
       
-      // Strategy: Query all PoolCreated events from the factory
-      // This gives us a complete list of pools
-      const events = await this.client.queryEvents({
-        query: { MoveEventType: CETUS_CONFIG.poolCreatedType },
-        limit: 1000, // Adjust based on actual pool count
-        order: 'descending',
-      });
-      
-      logger.info({ eventCount: events.data.length }, 'Cetus events fetched');
-      
+      // Strategy: Query all PoolCreated events from the factory with pagination
       const pools: PoolInfo[] = [];
+      let cursor: any = null;
+      let totalFetched = 0;
+      const maxPages = 10; // Fetch up to 10 pages (500 pools)
       
-      for (const event of events.data) {
-        try {
-          const poolInfo = this.parsePoolEvent(event);
-          if (poolInfo) {
-            pools.push(poolInfo);
-            this.poolCache.set(poolInfo.poolId, poolInfo);
+      for (let page = 0; page < maxPages; page++) {
+        const events = await this.client.queryEvents({
+          query: { MoveEventType: CETUS_CONFIG.poolCreatedType },
+          limit: 50,
+          order: 'descending',
+          cursor,
+        });
+        
+        totalFetched += events.data.length;
+        
+        for (const event of events.data) {
+          try {
+            const poolInfo = this.parsePoolEvent(event);
+            if (poolInfo) {
+              pools.push(poolInfo);
+              this.poolCache.set(poolInfo.poolId, poolInfo);
+            }
+          } catch (error) {
+            logger.debug({ error }, 'Failed to parse Cetus pool event');
           }
-        } catch (error) {
-          logger.warn({ error, event }, 'Failed to parse Cetus pool event');
         }
+        
+        if (!events.hasNextPage || !events.nextCursor) {
+          break;
+        }
+        
+        cursor = events.nextCursor;
       }
       
-      logger.info({ poolCount: pools.length }, 'Cetus pools loaded');
+      logger.info({ poolCount: pools.length, totalEvents: totalFetched }, 'Cetus pools loaded');
       return pools;
       
     } catch (error) {
