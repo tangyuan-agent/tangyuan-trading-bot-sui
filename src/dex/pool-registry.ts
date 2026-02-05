@@ -175,4 +175,12 @@ export class PoolRegistry {
     const node = this.tokenGraph.nodes.get(coinType);
     return node?.neighbors || new Map();
   }
+  
+  getAdapter(dex: DEXName): DEXAdapter | undefined {
+    return this.adapters.get(dex);
+  }
+  
+  findPoolsForPair(coinTypeA: string, coinTypeB: string): PoolInfo[] {
+    return this.getPoolsForPair(coinTypeA, coinTypeB);
+  }
 }

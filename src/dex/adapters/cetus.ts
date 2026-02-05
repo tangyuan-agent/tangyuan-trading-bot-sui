@@ -117,9 +117,9 @@ export class CetusAdapter implements DEXAdapter {
       const fields = (poolObject.data.content as any).fields;
       
       // Parse reserves from pool object fields
-      // Field names may vary - adjust based on actual contract
-      const reserveA = BigInt(fields.coin_a_balance || fields.reserve_a || 0);
-      const reserveB = BigInt(fields.coin_b_balance || fields.reserve_b || 0);
+      // Cetus uses 'coin_a' and 'coin_b' for reserves
+      const reserveA = BigInt(fields.coin_a || 0);
+      const reserveB = BigInt(fields.coin_b || 0);
       
       return { reserveA, reserveB };
       
