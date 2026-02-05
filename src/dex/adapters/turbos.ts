@@ -47,17 +47,52 @@ export class TurbosAdapter implements DEXAdapter {
       
       logger.info({ eventCount: events.data.length }, 'Turbos events fetched');
       
-      const pools: PoolInfo[] = [];
+      // Extract pool IDs from events
+      const poolIds = events.data
+        .map(event => (event.parsedJson as any)?.pool as string)
+        .filter((id): id is string => !!id);
       
-      for (const event of events.data) {
+      if (poolIds.length === 0) {
+        logger.warn('No pool IDs found in events');
+        return [];
+      }
+      
+      logger.info({ poolCount: poolIds.length }, 'Fetching pool objects...');
+      
+      // Batch fetch pool objects (50 at a time to respect rate limits)
+      const pools: PoolInfo[] = [];
+      const batchSize = 50;
+      
+      for (let i = 0; i < poolIds.length; i += batchSize) {
+        const batch = poolIds.slice(i, i + batchSize);
+        
         try {
-          const poolInfo = this.parsePoolEvent(event);
-          if (poolInfo) {
-            pools.push(poolInfo);
-            this.poolCache.set(poolInfo.poolId, poolInfo);
+          const objects = await this.client.multiGetObjects({
+            ids: batch,
+            options: {
+              showType: true,
+              showContent: true,
+            },
+          });
+          
+          for (const obj of objects) {
+            try {
+              const poolInfo = this.parsePoolFromObject(obj);
+              if (poolInfo) {
+                pools.push(poolInfo);
+                this.poolCache.set(poolInfo.poolId, poolInfo);
+              }
+            } catch (error) {
+              logger.debug({ error, objectId: obj.data?.objectId }, 'Failed to parse pool object');
+            }
+          }
+          
+          // Small delay between batches to be nice to the RPC
+          if (i + batchSize < poolIds.length) {
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
         } catch (error) {
-          logger.warn({ error, event }, 'Failed to parse Turbos pool event');
+          logger.warn({ error, batchStart: i, batchSize }, 'Failed to fetch batch of pool objects');
         }
       }
       
@@ -70,26 +105,37 @@ export class TurbosAdapter implements DEXAdapter {
     }
   }
   
-  private parsePoolEvent(event: any): PoolInfo | null {
+  private parsePoolFromObject(poolObject: any): PoolInfo | null {
     try {
-      const parsed = event.parsedJson;
-      
-      if (!parsed.pool_id && !parsed.poolId) {
+      if (!poolObject.data || poolObject.data.content?.dataType !== 'moveObject') {
         return null;
       }
       
+      const poolId = poolObject.data.objectId;
+      
+      // Parse type to extract token types
+      // Format: 0x...::pool::Pool<TokenA, TokenB, FeeTier>
+      const typeStr = poolObject.data.type as string;
+      const typeMatch = typeStr.match(/Pool<([^,]+),\s*([^,]+),\s*([^>]+)>/);
+      
+      if (!typeMatch) {
+        return null;
+      }
+      
+      const [, coinTypeA, coinTypeB] = typeMatch;
+      const fields = (poolObject.data.content as any).fields;
+      
       return {
         dex: 'turbos',
-        poolId: parsed.pool_id || parsed.poolId,
-        coinTypeA: parsed.coin_type_a || parsed.coinTypeA || parsed.token_a,
-        coinTypeB: parsed.coin_type_b || parsed.coinTypeB || parsed.token_b,
-        reserveA: 0n,
-        reserveB: 0n,
-        feeRate: parsed.fee_rate ? Number(parsed.fee_rate) / 1000000 : 0.003,
+        poolId,
+        coinTypeA: coinTypeA.trim(),
+        coinTypeB: coinTypeB.trim(),
+        reserveA: BigInt(fields.coin_a || 0),
+        reserveB: BigInt(fields.coin_b || 0),
+        feeRate: fields.fee ? Number(fields.fee) / 1000000 : 0.003,
         lastUpdated: Date.now(),
       };
     } catch (error) {
-      logger.warn({ error }, 'Failed to parse Turbos pool event');
       return null;
     }
   }
